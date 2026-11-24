@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#081a33"/>
+      <stop offset="0.42" stop-color="#15102f"/>
+      <stop offset="1" stop-color="#3b0d16"/>
+    </linearGradient>
+    <radialGradient id="coldGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#2f7dff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2f7dff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hotGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff7a2a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff7a2a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blastGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffe9a8" stop-opacity="0.95"/>
+      <stop offset="0.42" stop-color="#ff9a3c" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff6a20" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gWater" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8ce8ff"/>
+      <stop offset="0.52" stop-color="#37a8f0"/>
+      <stop offset="1" stop-color="#1d5fd0"/>
+    </linearGradient>
+    <linearGradient id="gLava" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffd75e"/>
+      <stop offset="0.45" stop-color="#ff7a1f"/>
+      <stop offset="1" stop-color="#c02708"/>
+    </linearGradient>
+    <linearGradient id="gPlant" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#c9ff8a"/>
+      <stop offset="0.5" stop-color="#6fe05a"/>
+      <stop offset="1" stop-color="#1f8f3c"/>
+    </linearGradient>
+    <linearGradient id="gIce" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e3fdff"/>
+      <stop offset="0.48" stop-color="#7fe3f4"/>
+      <stop offset="1" stop-color="#2b8cc4"/>
+    </linearGradient>
+    <linearGradient id="gSand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe89a"/>
+      <stop offset="0.5" stop-color="#efb64b"/>
+      <stop offset="1" stop-color="#b56d18"/>
+    </linearGradient>
+    <clipPath id="clipBg"><rect width="512" height="512" rx="112"/></clipPath>
+    <clipPath id="clipWater"><rect x="0" y="0" width="132" height="132" rx="30"/></clipPath>
+    <clipPath id="clipLava"><rect x="0" y="0" width="132" height="132" rx="30"/></clipPath>
+    <clipPath id="clipPlant"><rect x="0" y="0" width="132" height="132" rx="30"/></clipPath>
+    <clipPath id="clipIce"><rect x="0" y="0" width="132" height="132" rx="30"/></clipPath>
+    <clipPath id="clipSand"><rect x="0" y="0" width="82" height="82" rx="20"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#clipBg)">
+  <!-- dark temperature background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="56" cy="452" r="230" fill="url(#coldGlow)"/>
+  <circle cx="452" cy="74" r="240" fill="url(#hotGlow)"/>
+
+  <!-- faint board grid -->
+  <g stroke="#ffffff" stroke-opacity="0.045" stroke-width="2">
+    <path d="M128 52V460M192 52V460M256 52V460M320 52V460M384 52V460"/>
+    <path d="M52 128H460M52 192H460M52 256H460M52 320H460M52 384H460"/>
+  </g>
+  <rect x="10" y="10" width="492" height="492" rx="104" fill="none"
+        stroke="#ffffff" stroke-opacity="0.07" stroke-width="2"/>
+
+  <!-- burst behind the block cluster -->
+  <circle cx="388" cy="132" r="118" fill="url(#blastGlow)"/>
+  <circle cx="388" cy="132" r="66" fill="none" stroke="#ffd166"
+          stroke-width="5" stroke-opacity="0.55" stroke-dasharray="10 13"/>
+  <circle cx="388" cy="132" r="96" fill="none" stroke="#ff9a3c"
+          stroke-width="3" stroke-opacity="0.28" stroke-dasharray="6 18"/>
+  <g stroke="#ffd166" stroke-width="6" stroke-linecap="round" opacity="0.8">
+    <path d="M388 132L420 66"/>
+    <path d="M388 132L452 116"/>
+    <path d="M388 132L438 176"/>
+    <path d="M388 132L350 58"/>
+    <path d="M388 132L312 112"/>
+  </g>
+  <g fill="#ffe9a8">
+    <path d="M340 70l4 13 13 4-13 4-4 13-4-13-13-4 13-4z"/>
+    <path d="M456 158l3 9 9 3-9 3-3 9-3-9-9-3 9-3z" opacity="0.8"/>
+    <path d="M286 136l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" opacity="0.65"/>
+  </g>
+
+  <!-- flying sand block, breaking out of the cluster -->
+  <g transform="translate(398 70) rotate(17)">
+    <rect x="0" y="8" width="82" height="82" rx="20" fill="#05030a" opacity="0.3"/>
+    <rect x="0" y="0" width="82" height="82" rx="20" fill="url(#gSand)"/>
+    <rect x="3" y="3" width="76" height="76" rx="17" fill="none"
+          stroke="#ffffff" stroke-opacity="0.28" stroke-width="2.5"/>
+    <g clip-path="url(#clipSand)">
+      <path d="M10 50Q26 39 41 47T73 43" fill="none" stroke="#8b4a0d"
+            stroke-opacity="0.5" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M10 64Q28 53 44 61T74 57" fill="none" stroke="#8b4a0d"
+            stroke-opacity="0.42" stroke-width="4" stroke-linecap="round"/>
+      <path d="M22 26Q34 18 46 24T66 21" fill="none" stroke="#8b4a0d"
+            stroke-opacity="0.36" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="24" cy="34" r="4" fill="#fff3bf" opacity="0.9"/>
+      <circle cx="56" cy="70" r="3" fill="#fff3bf" opacity="0.8"/>
+      <circle cx="62" cy="30" r="2.5" fill="#8b4a0d" opacity="0.55"/>
+      <circle cx="28" cy="72" r="2.5" fill="#8b4a0d" opacity="0.55"/>
+      <circle cx="46" cy="18" r="2" fill="#8b4a0d" opacity="0.5"/>
+    </g>
+    <path d="M4 24Q4 4 24 4H52Q38 12 28 18Q16 24 4 34Z" fill="#ffffff" opacity="0.13"/>
+  </g>
+
+  <!-- particle trail from the blast -->
+  <g>
+    <circle cx="374" cy="176" r="7" fill="#ffb23c"/>
+    <circle cx="356" cy="202" r="5" fill="#ff7a2a" opacity="0.9"/>
+    <circle cx="414" cy="192" r="6" fill="#ffe18a" opacity="0.85"/>
+    <rect x="430" y="150" width="10" height="10" rx="3" fill="#7fe3f4" opacity="0.85" transform="rotate(22 435 155)"/>
+    <rect x="368" y="52" width="9" height="9" rx="3" fill="#8ce8ff" opacity="0.8" transform="rotate(-18 372 56)"/>
+    <rect x="456" y="98" width="8" height="8" rx="2.5" fill="#ff7a2a" opacity="0.8" transform="rotate(30 460 102)"/>
+    <rect x="300" y="176" width="8" height="8" rx="2.5" fill="#6fe05a" opacity="0.75" transform="rotate(18 304 180)"/>
+  </g>
+
+  <!-- block cluster -->
+  <g transform="rotate(-7 256 300)">
+    <!-- water -->
+    <g transform="translate(116 160)">
+      <rect x="0" y="10" width="132" height="132" rx="30" fill="#05030a" opacity="0.32"/>
+      <rect x="0" y="0" width="132" height="132" rx="30" fill="url(#gWater)"/>
+      <g clip-path="url(#clipWater)">
+        <path d="M66 26C66 26 34 64 34 82A32 32 0 1 1 98 82C98 64 66 26 66 26Z" fill="#eefcff" opacity="0.94"/>
+        <ellipse cx="52" cy="84" rx="8" ry="13" fill="#ffffff" opacity="0.6" transform="rotate(-24 52 84)"/>
+        <circle cx="30" cy="32" r="5" fill="#ffffff" opacity="0.38"/>
+        <circle cx="104" cy="50" r="4" fill="#ffffff" opacity="0.3"/>
+        <path d="M4 24Q4 4 24 4H54Q40 12 30 18Q16 24 4 34Z" fill="#ffffff" opacity="0.14"/>
+      </g>
+      <rect x="4" y="4" width="124" height="124" rx="26" fill="none"
+            stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5"/>
+    </g>
+
+    <!-- lava -->
+    <g transform="translate(264 160)">
+      <rect x="0" y="10" width="132" height="132" rx="30" fill="#05030a" opacity="0.32"/>
+      <rect x="0" y="0" width="132" height="132" rx="30" fill="url(#gLava)"/>
+      <g clip-path="url(#clipLava)">
+        <path d="M18 30L48 56L32 78L64 98L46 124" fill="none" stroke="#681604"
+              stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M64 98L92 88L116 102" fill="none" stroke="#681604"
+              stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M18 30L48 56L32 78L64 98L46 124" fill="none" stroke="#ffb52e"
+              stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+        <path d="M64 98L92 88L116 102" fill="none" stroke="#ffb52e"
+              stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+        <circle cx="48" cy="56" r="6" fill="#ffe58a"/>
+        <circle cx="64" cy="98" r="7" fill="#ffe58a"/>
+        <circle cx="92" cy="88" r="4.5" fill="#ffe58a"/>
+        <circle cx="22" cy="112" r="9" fill="#8f2506" opacity="0.4"/>
+        <circle cx="112" cy="28" r="12" fill="#ffcf66" opacity="0.28"/>
+        <path d="M4 24Q4 4 24 4H64Q46 14 32 20Q16 26 4 36Z" fill="#ffffff" opacity="0.14"/>
+      </g>
+      <rect x="4" y="4" width="124" height="124" rx="26" fill="none"
+            stroke="#ffffff" stroke-opacity="0.28" stroke-width="2.5"/>
+    </g>
+
+    <!-- plant -->
+    <g transform="translate(116 308)">
+      <rect x="0" y="10" width="132" height="132" rx="30" fill="#05030a" opacity="0.32"/>
+      <rect x="0" y="0" width="132" height="132" rx="30" fill="url(#gPlant)"/>
+      <g clip-path="url(#clipPlant)">
+        <path d="M66 114C66 88 58 72 66 48" fill="none" stroke="#eaffcb"
+              stroke-width="8" stroke-linecap="round"/>
+        <path d="M66 80C44 80 30 64 36 42C58 42 70 60 66 80Z" fill="#e4ff9e"/>
+        <path d="M66 64C86 62 100 46 96 27C76 29 62 45 66 64Z" fill="#f2ffc4"/>
+        <path d="M42 64C52 64 60 71 64 78" fill="none" stroke="#79d34d"
+              stroke-width="3" stroke-linecap="round"/>
+        <path d="M90 46C82 50 74 56 68 62" fill="none" stroke="#79d34d"
+              stroke-width="3" stroke-linecap="round"/>
+        <circle cx="36" cy="100" r="5" fill="#eaffcb" opacity="0.55"/>
+        <circle cx="92" cy="104" r="4" fill="#eaffcb" opacity="0.45"/>
+        <path d="M4 24Q4 4 24 4H54Q38 12 28 18Q16 24 4 34Z" fill="#ffffff" opacity="0.14"/>
+      </g>
+      <rect x="4" y="4" width="124" height="124" rx="26" fill="none"
+            stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5"/>
+    </g>
+
+    <!-- ice -->
+    <g transform="translate(264 308)">
+      <rect x="0" y="10" width="132" height="132" rx="30" fill="#05030a" opacity="0.32"/>
+      <rect x="0" y="0" width="132" height="132" rx="30" fill="url(#gIce)"/>
+      <g clip-path="url(#clipIce)">
+        <path d="M66 28L66 108" fill="none" stroke="#f2feff" stroke-width="7" stroke-linecap="round"/>
+        <path d="M31 47L101 89" fill="none" stroke="#f2feff" stroke-width="7" stroke-linecap="round"/>
+        <path d="M101 47L31 89" fill="none" stroke="#f2feff" stroke-width="7" stroke-linecap="round"/>
+        <path d="M66 48L54 38M66 48L78 38" fill="none" stroke="#f2feff" stroke-width="6" stroke-linecap="round"/>
+        <path d="M66 88L54 98M66 88L78 98" fill="none" stroke="#f2feff" stroke-width="6" stroke-linecap="round"/>
+        <path d="M42 60L28 56M42 60L34 46" fill="none" stroke="#f2feff" stroke-width="6" stroke-linecap="round"/>
+        <path d="M90 60L104 56M90 60L98 46" fill="none" stroke="#f2feff" stroke-width="6" stroke-linecap="round"/>
+        <path d="M42 78L28 82M42 78L34 92" fill="none" stroke="#f2feff" stroke-width="6" stroke-linecap="round"/>
+        <path d="M90 78L104 82M90 78L98 92" fill="none" stroke="#f2feff" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="66" cy="68" r="8" fill="#ffffff" opacity="0.95"/>
+        <circle cx="66" cy="68" r="16" fill="none" stroke="#ffffff"
+                stroke-opacity="0.35" stroke-width="3"/>
+        <path d="M4 24Q4 4 24 4H54Q38 12 28 18Q16 24 4 34Z" fill="#ffffff" opacity="0.18"/>
+      </g>
+      <rect x="4" y="4" width="124" height="124" rx="26" fill="none"
+            stroke="#ffffff" stroke-opacity="0.35" stroke-width="2.5"/>
+    </g>
+  </g>
+  </g>
+</svg>

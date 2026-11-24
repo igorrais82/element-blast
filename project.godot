@@ -1,0 +1,46 @@
+; Engine configuration file.
+; Element Blast — prototype
+; Godot 4.7
+
+config_version=5
+
+[application]
+
+config/name="Element Blast"
+config/description="Головоломка о стихиях: ставь блоки, собирай линии и пробуждай воду, лаву, кислоту и песок."
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://assets/icon.svg"
+boot_splash/bg_color=Color(0.027451, 0.039216, 0.086275, 1)
+boot_splash/show_image=false
+
+[autoload]
+
+Profile="*res://scripts/Profile.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=450
+window/size/window_height_override=800
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+window/energy_saving/keep_screen_on=true
+
+[gui]
+
+theme/default_font_multichannel_signed_distance_field=true
+
+[input_devices]
+
+pointing/emulate_mouse_from_touch=true
+pointing/emulate_touch_from_mouse=false
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.027451, 0.039216, 0.086275, 1)
+textures/vram_compression/import_etc2_astc=true
