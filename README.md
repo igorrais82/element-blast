@@ -34,16 +34,29 @@
 
 - **Windows (x64, portable):**
   [ElementBlast-windows-x64.exe](https://github.com/igorrais82/element-blast/releases/latest/download/ElementBlast-windows-x64.exe)
-- **Android (APK):**
+- **Android (APK, release-подпись, universal):**
   [ElementBlast-android.apk](https://github.com/igorrais82/element-blast/releases/latest/download/ElementBlast-android.apk)
-  — debug-подпись, для установки нужно разрешить установку из неизвестных
-  источников.
+  — arm64-v8a + armeabi-v7a + x86_64, Android 7.0+.
 - **Исходники и документация:** этот репозиторий.
 
 Все версии: <https://github.com/igorrais82/element-blast/releases>
 
 Windows-сборка не требует установки: запустить exe можно из любой папки.
-Android-APK устанавливается на устройство с Android 7.0+.
+
+### Если Android пишет «Приложение не установлено»
+
+1. Скачайте APK **заново** из последнего релиза. Размер файла — около **79 МБ**.
+2. Если раньше уже стояла debug-версия Element Blast — **удалите её**: у новой
+   сборки другая подпись.
+3. Разрешите установку из неизвестных источников для браузера или файлового
+   менеджера: «Настройки → Приложения → Специальный доступ → Установка
+   неизвестных приложений».
+4. Если Play Protect предупреждает — нажмите «Подробнее» → «Установить всё равно».
+5. Не открывайте APK из архиватора или предпросмотра: сначала сохраните файл
+   полностью, затем откройте его через файловый менеджер.
+
+SHA-256 последней Android-сборки:
+`756F86F156E4102BECE5435D2259BA1B7EFB358D008143A408A88E7BD7C28BDC`
 
 ---
 
