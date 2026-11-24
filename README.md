@@ -32,12 +32,15 @@
 
 Готовые сборки лежат в **GitHub Releases**:
 
-- **Windows (x64, portable):** `ElementBlast-windows-x64.exe`
-- **Android (APK):** `ElementBlast-android.apk` — debug-подпись, для установки
-  нужно разрешить установку из неизвестных источников.
+- **Windows (x64, portable):**
+  [ElementBlast-windows-x64.exe](https://github.com/igorrais82/element-blast/releases/latest/download/ElementBlast-windows-x64.exe)
+- **Android (APK):**
+  [ElementBlast-android.apk](https://github.com/igorrais82/element-blast/releases/latest/download/ElementBlast-android.apk)
+  — debug-подпись, для установки нужно разрешить установку из неизвестных
+  источников.
 - **Исходники и документация:** этот репозиторий.
 
-Ссылка: <https://github.com/igorrais82/element-blast/releases/latest>
+Все версии: <https://github.com/igorrais82/element-blast/releases>
 
 Windows-сборка не требует установки: запустить exe можно из любой папки.
 Android-APK устанавливается на устройство с Android 7.0+.
