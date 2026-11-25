@@ -560,6 +560,8 @@ func begin_awakening() -> void:
 	mode = "awakening"
 	sand = SandSim.new(rows)
 	sand.temperature = temperature
+	sand.tick_rate = QualitySettings.sand_tick_rate
+	sand.max_ticks = QualitySettings.sand_max_ticks
 	sand.event_rule = str(current_event.get("rule", "")) if event_active else ""
 	sand.growth_boost = 4.0 if sand.event_rule == "bloom" else 1.0
 	for r in rows:
@@ -598,9 +600,9 @@ func update(delta: float) -> void:
 	if awaken_timer < AWAKEN_DELAY:
 		return
 
-	var due := int((awaken_timer - AWAKEN_DELAY) * SandSim.TICK_RATE) - awaken_ticks
+	var due := int((awaken_timer - AWAKEN_DELAY) * sand.tick_rate) - awaken_ticks
 	var steps := 0
-	while due > 0 and awaken_ticks < SandSim.MAX_TICKS and steps < MAX_STEPS_PER_FRAME:
+	while due > 0 and awaken_ticks < sand.max_ticks and steps < QualitySettings.sand_max_steps:
 		var events := sand.step()
 		awaken_ticks += 1
 		steps += 1

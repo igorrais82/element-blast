@@ -17,15 +17,17 @@ var event_accent := Color.TRANSPARENT
 var event_bg := Color.TRANSPARENT
 var shown_bg := Color("#141a38")
 var shown_accent := Color("#b9a8ff")
+var low_end := false
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	low_end = QualitySettings.low_end
 	glow = _make_glow()
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261124
-	for i in 54:
+	for i in QualitySettings.star_count:
 		stars.append({
 			"x": rng.randf(),
 			"y": rng.randf(),
@@ -33,7 +35,7 @@ func _ready() -> void:
 			"p": rng.randf_range(0.0, TAU),
 			"v": rng.randf_range(0.25, 1.2),
 		})
-	for i in 6:
+	for i in (3 if low_end else 6):
 		fish.append({
 			"y": rng.randf_range(0.16, 0.78),
 			"size": rng.randf_range(7.0, 15.0),
@@ -43,7 +45,7 @@ func _ready() -> void:
 			"dir": -1 if rng.randi() % 2 == 0 else 1,
 			"alpha": rng.randf_range(0.05, 0.13),
 		})
-	for i in 22:
+	for i in (10 if low_end else 22):
 		petals.append({
 			"x": rng.randf(),
 			"y": rng.randf(),
@@ -53,7 +55,7 @@ func _ready() -> void:
 			"phase": rng.randf_range(0.0, TAU),
 			"warm": rng.randf() < 0.55,
 		})
-	for i in 34:
+	for i in (16 if low_end else 34):
 		embers.append({
 			"x": rng.randf(),
 			"size": rng.randf_range(1.2, 3.2),
@@ -119,15 +121,16 @@ func _draw() -> void:
 		draw_texture_rect(glow,
 			Rect2(blue_pos - Vector2(blue_r, blue_r), Vector2(blue_r, blue_r) * 2.0),
 			false, first)
-		draw_texture_rect(glow,
-			Rect2(purple_pos - Vector2(purple_r, purple_r), Vector2(purple_r, purple_r) * 2.0),
-			false, second)
-		draw_texture_rect(glow,
-			Rect2(orange_pos - Vector2(orange_r, orange_r), Vector2(orange_r, orange_r) * 2.0),
-			false, third)
-		draw_texture_rect(glow,
-			Rect2(score_pos - Vector2(score_r, score_r), Vector2(score_r, score_r) * 2.0),
-			false, score_glow)
+		if not low_end:
+			draw_texture_rect(glow,
+				Rect2(purple_pos - Vector2(purple_r, purple_r), Vector2(purple_r, purple_r) * 2.0),
+				false, second)
+			draw_texture_rect(glow,
+				Rect2(orange_pos - Vector2(orange_r, orange_r), Vector2(orange_r, orange_r) * 2.0),
+				false, third)
+			draw_texture_rect(glow,
+				Rect2(score_pos - Vector2(score_r, score_r), Vector2(score_r, score_r) * 2.0),
+				false, score_glow)
 
 	for star in stars:
 		var twinkle: float = 0.12 + 0.16 * (0.5 + 0.5 * sin(t * float(star["v"]) + float(star["p"])))

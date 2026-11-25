@@ -54,6 +54,7 @@ var _overlay_tweens := {}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	QualitySettings.configure()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--theme="):
 			Profile.theme = "light" if arg.substr(8) == "light" else "dark"
@@ -86,6 +87,9 @@ func _ready() -> void:
 	board_view.set_game(game)
 	board_view.invalid_attempt.connect(_on_invalid_attempt)
 	board_view.piece_picked.connect(_on_piece_picked)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--style="):
+			board_view.visual_style = clampi(int(arg.substr(8)), 0, 2)
 
 	_update_sound_button()
 	_refresh_event_visuals()
@@ -959,6 +963,40 @@ func _show_banner(text: String, subtitle := "") -> void:
 	banner_tween.tween_property(banner_root, "modulate:a", 0.0, 0.42)
 
 
+func _play_place_element(element: String) -> void:
+	match element:
+		"water", "oil":
+			sfx.play("drop", 1.18)
+		"acid":
+			sfx.play("acid", 1.35)
+		"fire", "lava":
+			sfx.play("fire", 1.22)
+		"ice", "snow", "crystal":
+			sfx.play("freeze", 1.18)
+
+
+func _play_surge_sound(kind: String) -> void:
+	match kind:
+		"water":
+			sfx.play("water", 0.95)
+		"acid":
+			sfx.play("acid", 0.92)
+		"lava":
+			sfx.play("lava", 0.90)
+		"fire":
+			sfx.play("fire", 0.94)
+		"snow", "ice":
+			sfx.play("freeze", 0.92)
+		"plant", "seaweed", "spore", "flower":
+			sfx.play("grow", 0.90)
+		"gunpowder":
+			sfx.play("explosion", 1.02)
+		"oil":
+			sfx.play("water", 1.22)
+		_:
+			sfx.play("surge")
+
+
 func _on_invalid_attempt() -> void:
 	sfx.play("invalid")
 
@@ -997,6 +1035,7 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 			_show_banner("ЗАТИШЬЕ", "%s · событие ушло" % str(data.get("event", {}).get("name", "")))
 		"place":
 			sfx.play("place")
+			_play_place_element(str(data.get("element", "")))
 			_update_hud()
 			_bump_score()
 		"clear":
@@ -1008,11 +1047,22 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 			_bump_score()
 		"sand_reactions":
 			_update_hud()
-			if reaction_cd <= 0.0:
-				var events: Dictionary = data.get("events", {})
-				if events.has("obsidian"):
+			var events: Dictionary = data.get("events", {})
+			if events.has("explode"):
+				sfx.play("explosion", 0.96)
+				reaction_cd = 0.24
+			elif reaction_cd <= 0.0:
+				if events.has("boil") or events.has("release") or events.has("extinguish"):
+					sfx.play("steam", 0.95)
+				elif events.has("freeze") or events.has("condense") or events.has("solidify"):
+					sfx.play("freeze", 0.98)
+				elif events.has("grow") or events.has("spore") or events.has("absorb"):
+					sfx.play("grow", 0.95)
+				elif events.has("ignite") or events.has("burn"):
+					sfx.play("fire", 1.05)
+				elif events.has("obsidian"):
 					sfx.play("obsidian")
-				elif events.has("dissolve") or events.has("melt") or events.has("burn") or events.has("dilute"):
+				elif events.has("dissolve") or events.has("melt") or events.has("dilute"):
 					sfx.play("dissolve")
 				reaction_cd = 0.20
 		"temperature":
@@ -1024,7 +1074,7 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 			else:
 				sfx.play("cold", 0.95 + minf(absf(float(temp_delta)), 30.0) * 0.01)
 		"awaken_surge":
-			sfx.play("surge")
+			_play_surge_sound(str(data.get("kind", "")))
 		"awaken_start":
 			sfx.play("awaken")
 			if game.event_active:
@@ -1072,6 +1122,7 @@ func _handle_cli() -> void:
 	var delay := -1.0
 	var screen := ""
 	var event_id := ""
+	var style_id := -1
 	for arg in args:
 		if arg.begins_with("--shot="):
 			shot_path = arg.substr(7)
@@ -1081,6 +1132,8 @@ func _handle_cli() -> void:
 			screen = arg.substr(9)
 		elif arg.begins_with("--event="):
 			event_id = arg.substr(8)
+		elif arg.begins_with("--style="):
+			style_id = clampi(int(arg.substr(8)), 0, 2)
 		elif arg == "--demo":
 			demo = true
 
@@ -1156,6 +1209,9 @@ func _handle_cli() -> void:
 		_show_overlay(over_overlay)
 		_set_hud_visible(false)
 		_count_label(final_score, 1280, 0.8)
+
+	if style_id >= 0 and board_view != null:
+		board_view.visual_style = style_id
 
 	if shot_path != "":
 		await get_tree().create_timer(delay).timeout

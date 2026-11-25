@@ -131,9 +131,17 @@ var snow_timer := 0.0
 var heat_timer := 0.0
 
 var draw_time := 0.0
+var low_end := false
+var sand_scale := 4
+var texture_interval := 1.0 / 45.0
+var texture_timer := 0.0
+var visual_style := 0
+var awaken_style_counter := 0
+const STYLE_NAMES := ["КЛАССИКА", "ГЛЯНЕЦ", "НЕОН"]
 
 const SAND_FADE_TIME := 0.35
 const CELL_TEX_SIZE := 96
+var cell_tex_size := CELL_TEX_SIZE
 var cell_textures := {}
 var beam_texture: ImageTexture
 var sand_image: Image
@@ -156,6 +164,10 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	low_end = QualitySettings.low_end
+	sand_scale = QualitySettings.sand_scale
+	cell_tex_size = 64 if low_end else CELL_TEX_SIZE
+	texture_interval = 1.0 / maxf(1.0, QualitySettings.texture_fps)
 	_rng.randomize()
 	_box.anti_aliasing = true
 	_build_sand_colors()
@@ -215,7 +227,7 @@ func _calc_layout() -> void:
 	var h := size.y
 	if w < 12.0 or h < 12.0:
 		return
-	cell_gap = w * 0.013
+	cell_gap = w * 0.001
 	cell_size = (w - cell_gap * (cols - 1.0)) / float(cols)
 	var board_w := cell_size * cols + cell_gap * (cols - 1.0)
 	var board_h := cell_size * rows + cell_gap * (rows - 1.0)
@@ -307,8 +319,8 @@ func _draw_board() -> void:
 	for r in rows:
 		for c in cols:
 			var rect := Rect2(_cell_pos(r, c), Vector2(cell_size, cell_size))
-			_round_rect(rect, cell_size * 0.20, ThemeKit.board_cell(accent))
-			_round_rect(rect.grow(-cell_size * 0.045), cell_size * 0.17,
+			_round_rect(rect, cell_size * 0.06, ThemeKit.board_cell(accent))
+			_round_rect(rect.grow(-cell_size * 0.045), cell_size * 0.05,
 				ThemeKit.board_cell_inner())
 			if not sand_active:
 				var cell = game.board[r][c]
@@ -362,20 +374,21 @@ func _build_cell_textures() -> void:
 			"fire", "oil", "plant", "gunpowder", "glass",
 			"seaweed", "sponge", "coal", "ash", "snow", "crystal", "spore", "flower"]:
 		var variants: Array = []
-		for variant in 3:
+		var variants_count := 2 if low_end else 3
+		for variant in variants_count:
 			variants.append(_make_cell_texture(element, variant))
 		cell_textures[element] = variants
 
 
 func _make_cell_texture(element: String, variant: int) -> ImageTexture:
-	var size := CELL_TEX_SIZE
+	var size := cell_tex_size
 	var el: Dictionary = PALETTE[element]
 	var light: Color = el["light"]
 	var base: Color = el["base"]
 	var dark: Color = el["dark"]
 	var buffer := PackedByteArray()
 	buffer.resize(size * size * 4)
-	var radius := 0.22
+	var radius := 0.06
 	var inv := 1.0 / float(size)
 	var white := Color(1, 1, 1)
 
@@ -598,7 +611,7 @@ func _build_sand_texture() -> void:
 
 			var color: Color = _sand_base[type]
 			if type == SandSim.STEAM:
-				color = _sand_light[type]
+				color = _sand_light[type].lerp(_temp_accent(), 0.30)
 				color.a = 0.60
 			elif type == SandSim.SMOKE:
 				color = _sand_base[type]
@@ -656,7 +669,7 @@ func _build_sand_texture() -> void:
 
 	# Upscale with nearest so the fluid still reads as chunky sand under
 	# the linear filtering used by the nicer cell sprites.
-	var scaled := w * 4
+	var scaled := w * sand_scale
 	if sand_scaled_image == null:
 		sand_scaled_image = Image.create(scaled, scaled, false, Image.FORMAT_RGBA8)
 	sand_scaled_image.copy_from(sand_image)
@@ -697,13 +710,13 @@ func _draw_cell(rect: Rect2, cell: Dictionary, r: int, c: int, mini_mode := fals
 	var cell_px := rect.size.x * pop
 	var center := rect.get_center()
 	var rr := Rect2(center - Vector2(cell_px, cell_px) * 0.5, Vector2(cell_px, cell_px))
-	var radius := cell_px * 0.22
+	var radius := cell_px * 0.06
 
 	if game != null and game.temperature >= 2 and element == "stone":
 		_round_rect(rr.grow(cell_px * 0.06), radius * 1.20,
 			Color(1.0, 0.42, 0.12, 0.12))
 
-	if not mini_mode:
+	if not mini_mode and not low_end:
 		var glow: Color = el["glow"]
 		if glow.a > 0.001:
 			var pulse := 1.0
@@ -711,8 +724,6 @@ func _draw_cell(rect: Rect2, cell: Dictionary, r: int, c: int, mini_mode := fals
 				pulse = 0.80 + 0.20 * sin(draw_time * 3.2 + r * 0.8 + c * 0.6)
 			_round_rect(rr.grow(cell_px * 0.055), radius * 1.18,
 				_alpha(glow, glow.a * 0.55 * pulse))
-			_round_rect(rr.grow(cell_px * 0.13), radius * 1.30,
-				_alpha(glow, glow.a * 0.22 * pulse))
 
 	_round_rect(Rect2(rr.position + Vector2(0.0, cell_px * 0.06), rr.size), radius,
 		Color(0, 0, 0, 0.20 if mini_mode else 0.28))
@@ -728,9 +739,29 @@ func _draw_cell(rect: Rect2, cell: Dictionary, r: int, c: int, mini_mode := fals
 		elif game != null and game.temperature <= -2 \
 				and (element == "water" or element == "ice"):
 			tint_color = Color(0.82, 0.93, 1.10, 1.0)
+		if visual_style == 1:
+			tint_color = Color(tint_color.r * 1.06, tint_color.g * 1.06,
+				tint_color.b * 1.06, 1.0)
+		elif visual_style == 2:
+			tint_color = Color(tint_color.r * 0.93, tint_color.g * 0.98,
+				tint_color.b * 1.10, 1.0)
 		draw_texture_rect(texture, rr, false, tint_color)
 	else:
 		_round_rect(rr, radius, el["base"])
+
+	if visual_style == 1:
+		var gloss_start := rr.position + Vector2(rr.size.x * 0.10, rr.size.y * 0.34)
+		var gloss_end := rr.position + Vector2(rr.size.x * 0.78, rr.size.y * 0.06)
+		draw_line(gloss_start, gloss_end, Color(1, 1, 1, 0.16),
+			maxf(1.0, cell_px * 0.085), true)
+		draw_line(gloss_start + Vector2(0, cell_px * 0.10),
+			gloss_end + Vector2(0, cell_px * 0.10),
+			Color(1, 1, 1, 0.07), maxf(1.0, cell_px * 0.035), true)
+	elif visual_style == 2:
+		var neon: Color = el["light"]
+		neon.a = 0.62 if not mini_mode else 0.45
+		_round_outline(rr.grow(-cell_px * 0.012), radius, neon,
+			maxf(1.5, cell_px * 0.026))
 
 	var flash_at := float(cell.get("flash", 0.0))
 	if flash_at > 0.0:
@@ -835,8 +866,8 @@ func _draw_piece(piece: Dictionary, origin: Vector2, unit: float) -> void:
 	var element: String = piece["element"]
 	for offset in shape["cells"]:
 		var rect := Rect2(
-			origin + Vector2(offset.y, offset.x) * unit + Vector2(unit * 0.045, unit * 0.045),
-			Vector2(unit * 0.91, unit * 0.91)
+			origin + Vector2(offset.y, offset.x) * unit + Vector2(unit * 0.007, unit * 0.007),
+			Vector2(unit * 0.986, unit * 0.986)
 		)
 		_draw_cell(rect, {"t": element, "born": -999.0, "flash": 0.0}, offset.x + 1, offset.y + 2, true)
 
@@ -857,8 +888,8 @@ func _draw_ghost() -> void:
 	var shape: Dictionary = piece["shape"]
 	var valid := bool(active["valid"])
 	var ghost_color: Color = PALETTE[piece["element"]]["base"]
-	ghost_color.a = 0.40 if valid else 0.24
-	var modulate := Color(1, 1, 1, 0.50) if valid else Color(1.0, 0.45, 0.45, 0.45)
+	ghost_color.a = 0.34 if valid else 0.22
+	var modulate := Color(1, 1, 1, 0.38) if valid else Color(1.0, 0.45, 0.45, 0.38)
 	var outline := Color(0.15, 0.22, 0.40, 0.65) if ThemeKit.is_light() \
 		else Color(1, 1, 1, 0.55)
 	if not valid:
@@ -872,21 +903,22 @@ func _draw_ghost() -> void:
 		var rect := Rect2(_cell_pos(r, c), Vector2(cell_size, cell_size))
 		var texture := _cell_texture(piece["element"], r, c)
 		if texture != null:
-			draw_texture_rect(texture, rect.grow(-cell_size * 0.02), false, modulate)
+			draw_texture_rect(texture, rect, false, modulate)
 		else:
-			_round_rect(rect, cell_size * 0.22, ghost_color)
-		_round_outline(rect, cell_size * 0.22, outline, 2.0)
+			_round_rect(rect, cell_size * 0.06, ghost_color)
+		_round_outline(rect, cell_size * 0.06, outline, 2.0)
 
 
 func _draw_dragged_piece() -> void:
-	if drag.is_empty() or not ghost.is_empty():
+	if drag.is_empty():
 		return
 	var index := int(drag["index"])
 	if index < 0 or index >= game.pieces.size():
 		return
 	var grab: Vector2i = drag["grab"]
-	var origin := mouse_pos - Vector2(grab) * mini - Vector2(mini, mini) * 0.5
-	_draw_piece(game.pieces[index], origin, mini)
+	var unit := float(drag.get("unit", mini))
+	var origin := mouse_pos - Vector2(grab) * unit - Vector2(unit, unit) * 0.5
+	_draw_piece(game.pieces[index], origin, unit)
 
 
 func _draw_particles() -> void:
@@ -923,7 +955,8 @@ func _draw_awakening_aura() -> void:
 	var cycle := 2.0
 	var progress := fmod(awaken_t, cycle) / cycle
 	var center := board_rect.get_center()
-	for i in 3:
+	var arc_count := 2 if low_end else 3
+	for i in arc_count:
 		var k := fmod(progress + i * 0.333, 1.0)
 		var radius := board_rect.size.x * 0.44 * (0.35 + 0.75 * k)
 		draw_arc(center, radius, 0.0, TAU, 72,
@@ -1037,7 +1070,8 @@ func _press(pos: Vector2) -> void:
 		var rect := _piece_rect(index)
 		var gx := clampi(int((pos.x - rect.position.x) / mini), 0, int(shape["w"]) - 1)
 		var gy := clampi(int((pos.y - rect.position.y) / mini), 0, int(shape["h"]) - 1)
-		drag = {"index": index, "grab": Vector2i(gx, gy), "start": pos, "moved": false}
+		drag = {"index": index, "grab": Vector2i(gx, gy), "start": pos,
+			"moved": false, "unit": mini}
 		ghost = {}
 		hover_ghost = {}
 		piece_picked.emit()
@@ -1231,6 +1265,8 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 				board_rect.size.x * 0.28, 0.65, 3.0)
 			_burst(avg, Color(1, 1, 1), 8 + lines * 4, 1.7)
 			_burst(avg, Color(1.0, 0.86, 0.40), 6 + lines * 2, 1.3)
+			_burst(avg, _temp_accent(), 6 + lines * 2, 1.5)
+			_burst(avg, Color(0.55, 0.85, 1.0), 5 + lines, 1.1)
 			_add_text(avg - Vector2(0, cell_size * 0.15), "+%d" % int(data.get("points", 0)),
 				Color(0.85, 0.96, 1.0), cell_size * (0.66 + lines * 0.03))
 			if lines > 1:
@@ -1246,6 +1282,10 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 					cell_size * 1.4, 0.4, 3.0)
 				_burst(exp_pos, Color(1.0, 0.55, 0.20), 22, 1.8)
 				_burst(exp_pos, Color(1.0, 0.92, 0.60), 12, 1.3)
+				_burst(exp_pos, Color(1.0, 0.28, 0.16), 14, 2.1)
+				_burst(exp_pos, Color(0.55, 0.78, 1.0), 7, 1.5)
+				_add_ring(exp_pos, Color(1.0, 0.35, 0.18), cell_size * 0.4,
+					cell_size * 4.0, 0.65, 3.5)
 				if reaction_label_cd <= 0.0:
 					_add_text(exp_pos - Vector2(0, cell_size * 0.4), "ВЗРЫВ",
 						Color(1.0, 0.82, 0.35), cell_size * 0.48)
@@ -1344,14 +1384,21 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 						color = PALETTE["sponge"]["particle"]
 					"release":
 						color = PALETTE["steam"]["particle"]
+						_add_ring(pos, color, cell_size * 0.1, cell_size * 0.8, 0.35, 2.0)
+						_burst(pos, color, 4, 0.9)
 					"freeze":
 						color = PALETTE["ice"]["particle"]
+						_add_ring(pos, color, cell_size * 0.1, cell_size * 0.75, 0.35, 2.0)
+						_burst(pos, Color(0.75, 0.95, 1.0), 3, 0.9)
 					"solidify":
 						color = PALETTE["stone"]["particle"]
 					"spore":
 						color = PALETTE["spore"]["particle"]
+						_burst(pos, PALETTE["plant"]["particle"], 3, 0.9)
 					"shatter":
 						color = PALETTE["crystal"]["particle"]
+						_add_ring(pos, color, cell_size * 0.1, cell_size * 1.0, 0.4, 2.0)
+						_burst(pos, Color(0.8, 0.9, 1.0), 5, 1.2)
 					"extinguish":
 						color = PALETTE["steam"]["particle"]
 					"dissolve":
@@ -1418,11 +1465,19 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 			flash_color = end_accent
 			_add_ring(board_rect.get_center(), end_accent,
 				cell_size * 0.5, board_rect.size.x * 0.38, 0.55, 3.0)
+			awaken_style_counter += 1
+			if awaken_style_counter % 2 == 0:
+				visual_style = (visual_style + 1) % STYLE_NAMES.size()
+				_add_text(board_rect.get_center() - Vector2(0, cell_size * 2.2),
+					"СТИЛЬ: " + str(STYLE_NAMES[visual_style]),
+					end_accent, cell_size * 0.42)
 		"start":
 			sand_active = false
 			sand_showing = false
 			sand_fade = 0.0
 			sand_version = -1
+			visual_style = 0
+			awaken_style_counter = 0
 		"game_over":
 			drag = {}
 			selected = -1
@@ -1523,7 +1578,7 @@ func _spawn_snow() -> void:
 		"size": _rng.randf_range(1.2, 3.0),
 		"phase": _rng.randf_range(0.0, TAU),
 	})
-	if snow.size() > 160:
+	if snow.size() > QualitySettings.snow_cap:
 		snow.pop_front()
 
 
@@ -1741,6 +1796,10 @@ func _add_text(pos: Vector2, text: String, color: Color, font_size: float) -> vo
 
 
 func _process(delta: float) -> void:
+	if not drag.is_empty():
+		var target_unit := cell_size if _over_board(mouse_pos) else mini
+		drag["unit"] = lerpf(float(drag.get("unit", mini)), target_unit,
+			minf(1.0, delta * 14.0))
 	var i := particles.size() - 1
 	while i >= 0:
 		var p: Dictionary = particles[i]
@@ -1765,8 +1824,11 @@ func _process(delta: float) -> void:
 			entry["pos"] = entry["pos"] - Vector2(0.0, 34.0 * delta)
 		i -= 1
 
-	if game != null and game.sand != null and sand_showing and game.sand.version != sand_version:
+	texture_timer -= delta
+	if game != null and game.sand != null and sand_showing \
+			and game.sand.version != sand_version and texture_timer <= 0.0:
 		_build_sand_texture()
+		texture_timer = texture_interval
 
 	sand_fade = maxf(0.0, sand_fade - delta)
 	if not sand_active and sand_fade <= 0.0:
@@ -1790,13 +1852,13 @@ func _process(delta: float) -> void:
 	ambient_timer -= delta
 	if ambient_timer <= 0.0:
 		_spawn_ambient()
-		ambient_timer = _rng.randf_range(0.12, 0.24)
+		ambient_timer = _rng.randf_range(QualitySettings.ambient_min, QualitySettings.ambient_max)
 
 	if game != null and game.temperature <= -2:
 		snow_timer -= delta
 		if snow_timer <= 0.0:
 			_spawn_snow()
-			snow_timer = _rng.randf_range(0.025, 0.06)
+			snow_timer = _rng.randf_range(QualitySettings.snow_min, QualitySettings.snow_max)
 
 	var snow_index := snow.size() - 1
 	while snow_index >= 0:
@@ -1814,7 +1876,14 @@ func _process(delta: float) -> void:
 		heat_timer -= delta
 		if heat_timer <= 0.0:
 			_spawn_heat()
-			heat_timer = _rng.randf_range(0.10, 0.20)
+			heat_timer = _rng.randf_range(QualitySettings.heat_min, QualitySettings.heat_max)
+
+	var particle_cap := 80 if low_end else 180
+	while particles.size() > particle_cap:
+		particles.pop_front()
+	var snow_limit := QualitySettings.snow_cap
+	while snow.size() > snow_limit:
+		snow.pop_front()
 
 	shake = maxf(0.0, shake - delta * (18.0 + shake * 9.0))
 	flash = maxf(0.0, flash - delta * 2.6)

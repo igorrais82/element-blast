@@ -94,6 +94,50 @@ func _build_streams() -> void:
 		{"at": 0.12, "dur": 0.42, "f0": 1568.0, "f1": 1568.0, "wave": "sine", "vol": 0.08},
 		{"at": 0.0, "dur": 0.3, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.05},
 	])
+	_streams["water"] = _build([
+		{"at": 0.00, "dur": 0.50, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.20},
+		{"at": 0.02, "dur": 0.28, "f0": 720.0, "f1": 380.0, "wave": "sine", "vol": 0.16},
+		{"at": 0.16, "dur": 0.24, "f0": 480.0, "f1": 260.0, "wave": "sine", "vol": 0.13},
+		{"at": 0.30, "dur": 0.18, "f0": 620.0, "f1": 300.0, "wave": "sine", "vol": 0.10},
+	])
+	_streams["drop"] = _build([
+		{"at": 0.0, "dur": 0.09, "f0": 680.0, "f1": 260.0, "wave": "sine", "vol": 0.12},
+		{"at": 0.0, "dur": 0.05, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.06},
+	])
+	_streams["acid"] = _build([
+		{"at": 0.00, "dur": 0.40, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.16},
+		{"at": 0.02, "dur": 0.32, "f0": 2300.0, "f1": 1700.0, "wave": "square", "vol": 0.035},
+		{"at": 0.14, "dur": 0.22, "f0": 1800.0, "f1": 2400.0, "wave": "noise", "vol": 0.07},
+	])
+	_streams["fire"] = _build([
+		{"at": 0.00, "dur": 0.45, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.16},
+		{"at": 0.02, "dur": 0.35, "f0": 150.0, "f1": 90.0, "wave": "square", "vol": 0.04},
+		{"at": 0.10, "dur": 0.10, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.12},
+		{"at": 0.28, "dur": 0.08, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.10},
+	])
+	_streams["lava"] = _build([
+		{"at": 0.00, "dur": 0.55, "f0": 62.0, "f1": 42.0, "wave": "sine", "vol": 0.22},
+		{"at": 0.00, "dur": 0.50, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.12},
+		{"at": 0.20, "dur": 0.26, "f0": 180.0, "f1": 90.0, "wave": "triangle", "vol": 0.05},
+	])
+	_streams["steam"] = _build([
+		{"at": 0.00, "dur": 0.36, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.14},
+		{"at": 0.06, "dur": 0.28, "f0": 1200.0, "f1": 620.0, "wave": "sine", "vol": 0.035},
+	])
+	_streams["freeze"] = _build([
+		{"at": 0.00, "dur": 0.12, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.08},
+		{"at": 0.01, "dur": 0.28, "f0": 1568.0, "f1": 1568.0, "wave": "triangle", "vol": 0.12},
+		{"at": 0.08, "dur": 0.30, "f0": 2093.0, "f1": 2093.0, "wave": "sine", "vol": 0.09},
+	])
+	_streams["grow"] = _build([
+		{"at": 0.00, "dur": 0.18, "f0": 320.0, "f1": 520.0, "wave": "sine", "vol": 0.09},
+		{"at": 0.08, "dur": 0.20, "f0": 520.0, "f1": 720.0, "wave": "triangle", "vol": 0.07},
+	])
+	_streams["explosion"] = _build([
+		{"at": 0.00, "dur": 0.55, "f0": 0.0, "f1": 0.0, "wave": "noise", "vol": 0.30},
+		{"at": 0.00, "dur": 0.45, "f0": 72.0, "f1": 28.0, "wave": "sine", "vol": 0.28},
+		{"at": 0.01, "dur": 0.20, "f0": 120.0, "f1": 55.0, "wave": "square", "vol": 0.06},
+	])
 
 
 func _build(notes: Array) -> AudioStreamWAV:

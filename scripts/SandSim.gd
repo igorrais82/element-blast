@@ -104,6 +104,8 @@ var version := 0
 var tick := 0
 var idle_ticks := 0
 var temperature := 0
+var tick_rate := TICK_RATE
+var max_ticks := MAX_TICKS
 var event_rule := ""
 var growth_boost := 1.0
 
@@ -246,7 +248,7 @@ func step() -> Dictionary:
 
 
 func is_finished(ticks_done: int) -> bool:
-	return ticks_done >= MAX_TICKS or (ticks_done >= 16 and idle_ticks >= 10)
+	return ticks_done >= max_ticks or (ticks_done >= 16 and idle_ticks >= 10)
 
 
 # ---------------------------------------------------------------------------
