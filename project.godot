@@ -17,6 +17,7 @@ boot_splash/show_image=false
 [autoload]
 
 Profile="*res://scripts/Profile.gd"
+Monetization="*res://scripts/Monetization.gd"
 
 [display]
 

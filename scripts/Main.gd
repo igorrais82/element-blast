@@ -32,6 +32,15 @@ var over_overlay: Control
 var pause_overlay: Control
 var tutorial_overlay: Control
 var settings_overlay: Control
+var store_overlay: Control
+var store_products_box: VBoxContainer
+var store_status_label: Label
+var ad_overlay: Control
+var ad_timer_label: Label
+var ad_close_btn: Button
+var ad_countdown := 0.0
+var ad_active := false
+var _ad_resume_game := false
 
 static var _open_settings_after_reload := false
 var menu_best: Label
@@ -83,6 +92,11 @@ func _ready() -> void:
 	_build_overlays()
 	_build_tutorial_overlay()
 	_build_settings_overlay()
+	_build_store_overlay()
+	_build_ad_overlay()
+	Monetization.purchase_completed.connect(_on_purchase_completed)
+	Monetization.purchase_failed.connect(_on_purchase_failed)
+	Monetization.ad_requested.connect(_on_ad_requested)
 
 	board_view.set_game(game)
 	board_view.invalid_attempt.connect(_on_invalid_attempt)
@@ -109,8 +123,11 @@ func _process(delta: float) -> void:
 	if game != null:
 		game.update(delta)
 		_update_live_scoring(delta)
+		Monetization.tick(delta,
+			game.mode == "playing" or game.mode == "awakening")
 		if backdrop != null:
 			backdrop.target_temperature = float(game.temperature_degrees)
+	_update_ad_ui(delta)
 
 
 func _update_live_scoring(delta: float) -> void:
@@ -163,6 +180,10 @@ func _update_event_hud() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		if ad_overlay != null and ad_overlay.visible:
+			if ad_close_btn != null and not ad_close_btn.disabled:
+				_close_ad()
+			return
 		if settings_overlay != null and settings_overlay.visible:
 			_hide_settings()
 			return
@@ -371,6 +392,11 @@ func _build_overlays() -> void:
 	settings_btn.pressed.connect(_show_settings)
 	menu_body.add_child(settings_btn)
 
+	var shop_btn := _make_button("МАГАЗИН", false, 66)
+	shop_btn.add_theme_font_size_override("font_size", 22)
+	shop_btn.pressed.connect(_show_store)
+	menu_body.add_child(shop_btn)
+
 	menu_best = _centered_label("Рекорд: 0", 24, ThemeKit.text_secondary())
 	menu_body.add_child(menu_best)
 
@@ -573,6 +599,171 @@ func _show_settings() -> void:
 func _hide_settings() -> void:
 	sfx.play("ui")
 	_hide_overlay(settings_overlay)
+
+
+# ---------------------------------------------------------------------------
+# Store and ads
+# ---------------------------------------------------------------------------
+
+func _build_store_overlay() -> void:
+	store_overlay = _make_overlay(0.82)
+	var panel := _make_panel(620)
+	(store_overlay.get_node("Center") as CenterContainer).add_child(panel)
+	var body: VBoxContainer = panel.get_node("Margin/Body")
+
+	body.add_child(_centered_label("МАГАЗИН", 24, ThemeKit.text_secondary()))
+	var title := _centered_label("ПОДДЕРЖИ ИГРУ", 46, ThemeKit.text_primary())
+	title.add_theme_font_override("font", _display_font())
+	body.add_child(title)
+
+	store_status_label = _centered_label("", 18, Color("#ffca63"))
+	body.add_child(store_status_label)
+
+	store_products_box = VBoxContainer.new()
+	store_products_box.add_theme_constant_override("separation", 9)
+	body.add_child(store_products_box)
+
+	if Monetization.TEST_MODE:
+		var note := _centered_label(
+			"Тестовый режим: покупки работают локально. Для реальных платежей подключите RuStore Billing.",
+			14, ThemeKit.text_muted())
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note.custom_minimum_size = Vector2(500, 0)
+		body.add_child(note)
+
+	var back_btn := _make_button("НАЗАД", false, 62)
+	back_btn.pressed.connect(_hide_store)
+	body.add_child(back_btn)
+	_refresh_store()
+
+
+func _refresh_store() -> void:
+	if store_products_box == null:
+		return
+	for child in store_products_box.get_children():
+		store_products_box.remove_child(child)
+		child.queue_free()
+	for entry in Monetization.PRODUCTS:
+		var id := str(entry["id"])
+		var owned := Monetization.is_owned(id)
+		var row := PanelContainer.new()
+		var bg := ThemeKit.button_secondary_bg()
+		row.add_theme_stylebox_override("panel",
+			_flat(bg, 18, ThemeKit.panel_border(), 1, 14, 10))
+		store_products_box.add_child(row)
+
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 4)
+		row.add_child(col)
+		col.add_child(_label(str(entry["title"]), 22, ThemeKit.text_primary()))
+		var desc := _label(str(entry["desc"]), 15, ThemeKit.text_secondary())
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc.custom_minimum_size = Vector2(500, 0)
+		col.add_child(desc)
+
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 10)
+		col.add_child(line)
+		var price := _label(str(entry["price"]), 22, ThemeKit.accent_text(Color("#ffca63")))
+		price.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		line.add_child(price)
+		var buy := _make_button("КУПЛЕНО" if owned else "КУПИТЬ", not owned, 48)
+		buy.add_theme_font_size_override("font_size", 18)
+		buy.disabled = owned
+		buy.custom_minimum_size = Vector2(180, 48)
+		buy.pressed.connect(_buy_product.bind(id))
+		line.add_child(buy)
+
+
+func _show_store() -> void:
+	sfx.play("ui")
+	store_status_label.text = ""
+	_refresh_store()
+	_show_overlay(store_overlay)
+
+
+func _hide_store() -> void:
+	sfx.play("ui")
+	_hide_overlay(store_overlay)
+
+
+func _buy_product(id: String) -> void:
+	sfx.play("ui")
+	store_status_label.text = "Обработка покупки…"
+	await Monetization.purchase(id)
+
+
+func _on_purchase_completed(id: String) -> void:
+	sfx.play("combo")
+	store_status_label.text = "Покупка открыта: " + str(Monetization.product(id).get("title", id))
+	_refresh_store()
+	_update_hud()
+
+
+func _on_purchase_failed(_id: String, message: String) -> void:
+	store_status_label.text = message
+
+
+func _build_ad_overlay() -> void:
+	ad_overlay = _make_overlay(0.94)
+	var panel := _make_panel(560)
+	(ad_overlay.get_node("Center") as CenterContainer).add_child(panel)
+	var body: VBoxContainer = panel.get_node("Margin/Body")
+	body.add_child(_centered_label("РЕКЛАМА", 24, Color("#ffca63")))
+	var title := _centered_label("ТЕСТОВОЕ ОБЪЯВЛЕНИЕ", 40, ThemeKit.text_primary())
+	title.add_theme_font_override("font", _display_font())
+	body.add_child(title)
+	var desc := _centered_label(
+		"Здесь будет реальный interstitial от рекламной сети. Показ можно закрыть после короткой задержки.",
+		18, ThemeKit.text_secondary())
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(460, 0)
+	body.add_child(desc)
+	ad_timer_label = _centered_label("", 20, ThemeKit.text_muted())
+	body.add_child(ad_timer_label)
+	ad_close_btn = _make_button("ЗАКРЫТЬ", true, 62)
+	ad_close_btn.disabled = true
+	ad_close_btn.pressed.connect(_close_ad)
+	body.add_child(ad_close_btn)
+
+
+func _on_ad_requested(reason: String) -> void:
+	if ad_active or Profile.ads_removed:
+		return
+	ad_active = true
+	ad_countdown = 4.0
+	ad_close_btn.disabled = true
+	ad_timer_label.text = "Закрыть можно через 4…"
+	_ad_resume_game = game.mode == "playing" or game.mode == "awakening"
+	if _ad_resume_game:
+		game.pause()
+		pause_btn.disabled = true
+	sfx.play("ui")
+	_show_overlay(ad_overlay)
+
+
+func _close_ad() -> void:
+	if not ad_active:
+		return
+	ad_active = false
+	_hide_overlay(ad_overlay)
+	if _ad_resume_game and game.mode == "paused":
+		game.resume()
+		pause_btn.disabled = false
+	_ad_resume_game = false
+	Monetization.on_ad_closed()
+	sfx.play("ui")
+
+
+func _update_ad_ui(delta: float) -> void:
+	if not ad_active:
+		return
+	ad_countdown = maxf(0.0, ad_countdown - delta)
+	if ad_countdown > 0.0:
+		ad_timer_label.text = "Закрыть можно через %d…" % int(ceil(ad_countdown))
+	else:
+		ad_timer_label.text = "Можно закрыть"
+		ad_close_btn.disabled = false
 
 
 # ---------------------------------------------------------------------------
@@ -1107,6 +1298,7 @@ func _on_game_event(kind: String, data: Dictionary) -> void:
 			_show_overlay(over_overlay)
 			_set_hud_visible(false)
 			_count_label(final_score, int(data.get("score", game.score)), 0.8)
+			Monetization.request_interstitial("game_over")
 		"invalid":
 			sfx.play("invalid")
 
@@ -1199,6 +1391,10 @@ func _handle_cli() -> void:
 		_show_tutorial()
 	elif screen == "settings":
 		_show_settings()
+	elif screen == "store":
+		_show_store()
+	elif screen == "ad":
+		_on_ad_requested("debug")
 	elif screen == "gameover":
 		start_game()
 		game.force_event(event_id if event_id != "" else "flood")

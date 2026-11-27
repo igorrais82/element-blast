@@ -99,6 +99,70 @@ static var PALETTE := {
 		"base": Color("#ff8ac4"), "light": Color("#ffd3e8"), "dark": Color("#b03a74"),
 		"glow": Color(1.0, 0.55, 0.75, 0.18), "particle": Color("#ffb3da"),
 	},
+	"iron": {
+		"base": Color("#8a96a8"), "light": Color("#d6dde8"), "dark": Color("#4a5364"),
+		"glow": Color(0.7, 0.8, 0.95, 0.08), "particle": Color("#c6d2e2"),
+	},
+	"copper": {
+		"base": Color("#c47b4e"), "light": Color("#ffc49a"), "dark": Color("#6e3d24"),
+		"glow": Color(1.0, 0.55, 0.25, 0.12), "particle": Color("#f0a878"),
+	},
+	"gold": {
+		"base": Color("#e0b64e"), "light": Color("#fff0a8"), "dark": Color("#8a6418"),
+		"glow": Color(1.0, 0.85, 0.25, 0.16), "particle": Color("#ffe58a"),
+	},
+	"silver": {
+		"base": Color("#c8d2dc"), "light": Color("#ffffff"), "dark": Color("#6d7886"),
+		"glow": Color(0.8, 0.9, 1.0, 0.10), "particle": Color("#eef5ff"),
+	},
+	"lead": {
+		"base": Color("#6f7580"), "light": Color("#b9c0ca"), "dark": Color("#343942"),
+		"glow": Color(0.5, 0.55, 0.65, 0.05), "particle": Color("#a8b0bc"),
+	},
+	"tin": {
+		"base": Color("#b8c0c8"), "light": Color("#eef2f5"), "dark": Color("#666f78"),
+		"glow": Color(0.75, 0.82, 0.9, 0.08), "particle": Color("#dbe3ea"),
+	},
+	"mercury": {
+		"base": Color("#9aa7b8"), "light": Color("#eef6ff"), "dark": Color("#465366"),
+		"glow": Color(0.65, 0.8, 1.0, 0.18), "particle": Color("#d6e4f4"),
+	},
+	"titanium": {
+		"base": Color("#7f8fa6"), "light": Color("#d1dceb"), "dark": Color("#3e4b60"),
+		"glow": Color(0.55, 0.7, 0.95, 0.10), "particle": Color("#b8c8e0"),
+	},
+	"mushroom": {
+		"base": Color("#e06a5a"), "light": Color("#ffc0a8"), "dark": Color("#85302a"),
+		"glow": Color(1.0, 0.4, 0.3, 0.12), "particle": Color("#ff9a82"),
+	},
+	"moss": {
+		"base": Color("#6aa84f"), "light": Color("#c8f08a"), "dark": Color("#315c2a"),
+		"glow": Color(0.55, 0.9, 0.3, 0.12), "particle": Color("#a8e07a"),
+	},
+	"vine": {
+		"base": Color("#4f9e5a"), "light": Color("#b8f0a8"), "dark": Color("#205830"),
+		"glow": Color(0.35, 0.9, 0.4, 0.14), "particle": Color("#86d888"),
+	},
+	"pollen": {
+		"base": Color("#ffe07a"), "light": Color("#fffbd0"), "dark": Color("#a88c22"),
+		"glow": Color(1.0, 0.9, 0.3, 0.18), "particle": Color("#fff0a0"),
+	},
+	"slime": {
+		"base": Color("#8fd65a"), "light": Color("#d8ff9a"), "dark": Color("#4d7a22"),
+		"glow": Color(0.6, 1.0, 0.3, 0.20), "particle": Color("#c0f080"),
+	},
+	"bone": {
+		"base": Color("#e8e0cc"), "light": Color("#fffaf0"), "dark": Color("#9b8f78"),
+		"glow": Color(0.9, 0.85, 0.7, 0.06), "particle": Color("#f5edda"),
+	},
+	"shell": {
+		"base": Color("#f0c9a0"), "light": Color("#fff0d8"), "dark": Color("#a47a50"),
+		"glow": Color(1.0, 0.8, 0.5, 0.08), "particle": Color("#ffd8b0"),
+	},
+	"fungus": {
+		"base": Color("#b07a5a"), "light": Color("#e8c0a0"), "dark": Color("#5c3a2a"),
+		"glow": Color(0.8, 0.5, 0.3, 0.10), "particle": Color("#d0a080"),
+	},
 }
 
 var game: ElementGame
@@ -372,7 +436,9 @@ func _build_beam_texture() -> void:
 func _build_cell_textures() -> void:
 	for element in ["stone", "sand", "water", "lava", "acid", "ice", "obsidian",
 			"fire", "oil", "plant", "gunpowder", "glass",
-			"seaweed", "sponge", "coal", "ash", "snow", "crystal", "spore", "flower"]:
+			"seaweed", "sponge", "coal", "ash", "snow", "crystal", "spore", "flower",
+			"iron", "copper", "gold", "silver", "lead", "tin", "mercury", "titanium",
+			"mushroom", "moss", "vine", "pollen", "slime", "bone", "shell", "fungus"]:
 		var variants: Array = []
 		var variants_count := 2 if low_end else 3
 		for variant in variants_count:
@@ -586,6 +652,54 @@ func _apply_cell_pattern(element: String, color: Color, u: float, v: float,
 					color = color.lerp(Color(1.0, 0.78, 0.90), 0.38)
 			if center.length() < 0.055:
 				color = color.lerp(Color(1.0, 0.95, 0.55), 0.65)
+		"iron", "copper", "gold", "silver", "lead", "tin", "titanium":
+			var brushed := sin((u * 18.0 + v * 5.0 + float(variant) * 2.0) * PI)
+			if brushed > 0.82:
+				color = color.lightened(0.12)
+			elif brushed < -0.84:
+				color = color.darkened(0.08)
+			if absf((u + v) - 0.68) < 0.010:
+				color = color.lerp(Color.WHITE, 0.30)
+		"mercury":
+			var wave := absf(v - (0.5 + 0.05 * sin(u * 9.0 + float(variant))))
+			if wave < 0.018:
+				color = color.lerp(Color.WHITE, 0.36)
+		"mushroom":
+			var cap := Vector2(u - 0.5, v - 0.38).length()
+			if cap < 0.20:
+				color = color.lerp(Color(1.0, 0.75, 0.65), 0.20)
+			if Vector2(u - (0.34 + offset), v - 0.34).length() < 0.025 \
+					or Vector2(u - (0.64 - offset), v - 0.40).length() < 0.020:
+				color = color.lightened(0.18)
+			if absf(u - 0.5) < 0.018 and v > 0.55:
+				color = color.darkened(0.18)
+		"moss", "vine", "fungus":
+			var strand := absf(u - (0.5 + 0.12 * sin(v * 10.0 + float(variant))))
+			if strand < 0.018 and (v + float(variant) * 0.2) < 0.84:
+				color = color.lerp(Color(0.75, 1.0, 0.55), 0.30)
+			if Vector2(u - (0.28 + offset), v - 0.62).length() < 0.030 \
+					or Vector2(u - (0.70 - offset), v - 0.38).length() < 0.026:
+				color = color.lightened(0.10)
+		"pollen":
+			if Vector2(u - (0.32 + offset), v - 0.38).length() < 0.028 \
+					or Vector2(u - (0.66 - offset), v - 0.56).length() < 0.024 \
+					or Vector2(u - (0.46 + offset), v - 0.72).length() < 0.020:
+				color = color.lerp(Color(1.0, 1.0, 0.7), 0.55)
+		"slime":
+			var bubble := Vector2(u - (0.36 + offset), v - (0.60 - offset)).length()
+			if absf(bubble - 0.05) < 0.012:
+				color = color.lerp(Color.WHITE, 0.28)
+			var bubble2 := Vector2(u - (0.66 - offset), v - (0.36 + offset)).length()
+			if bubble2 < 0.035:
+				color = color.darkened(0.10)
+		"bone":
+			if absf((u + v) - (0.52 + offset)) < 0.012 \
+					or absf((u - v) + (0.16 - offset)) < 0.010:
+				color = color.lerp(Color.WHITE, 0.32)
+		"shell":
+			var ring := Vector2(u - 0.5, v - 0.5).length()
+			if absf(ring - 0.17) < 0.012 or absf(ring - 0.28) < 0.010:
+				color = color.lerp(Color.WHITE, 0.32)
 	return color
 
 

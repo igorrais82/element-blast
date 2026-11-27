@@ -36,7 +36,23 @@ const SNOW := 19
 const CRYSTAL := 20
 const SPORE := 21
 const FLOWER := 22
-const TYPE_COUNT := 23
+const IRON := 23
+const COPPER := 24
+const GOLD := 25
+const SILVER := 26
+const LEAD := 27
+const TIN := 28
+const MERCURY := 29
+const TITANIUM := 30
+const MUSHROOM := 31
+const MOSS := 32
+const VINE := 33
+const POLLEN := 34
+const SLIME := 35
+const BONE := 36
+const SHELL := 37
+const FUNGUS := 38
+const TYPE_COUNT := 39
 
 const TICK_RATE := 45.0
 const MAX_TICKS := 220
@@ -64,6 +80,22 @@ static var TYPE_NAMES := {
 	CRYSTAL: "crystal",
 	SPORE: "spore",
 	FLOWER: "flower",
+	IRON: "iron",
+	COPPER: "copper",
+	GOLD: "gold",
+	SILVER: "silver",
+	LEAD: "lead",
+	TIN: "tin",
+	MERCURY: "mercury",
+	TITANIUM: "titanium",
+	MUSHROOM: "mushroom",
+	MOSS: "moss",
+	VINE: "vine",
+	POLLEN: "pollen",
+	SLIME: "slime",
+	BONE: "bone",
+	SHELL: "shell",
+	FUNGUS: "fungus",
 }
 static var TYPE_IDS := {
 	"stone": STONE,
@@ -88,6 +120,22 @@ static var TYPE_IDS := {
 	"crystal": CRYSTAL,
 	"spore": SPORE,
 	"flower": FLOWER,
+	"iron": IRON,
+	"copper": COPPER,
+	"gold": GOLD,
+	"silver": SILVER,
+	"lead": LEAD,
+	"tin": TIN,
+	"mercury": MERCURY,
+	"titanium": TITANIUM,
+	"mushroom": MUSHROOM,
+	"moss": MOSS,
+	"vine": VINE,
+	"pollen": POLLEN,
+	"slime": SLIME,
+	"bone": BONE,
+	"shell": SHELL,
+	"fungus": FUNGUS,
 }
 static var NEIGHBORS := [
 	Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0),
@@ -95,6 +143,8 @@ static var NEIGHBORS := [
 static var QUANT_ORDER := [
 	STONE, ICE, OBSIDIAN, GLASS, CRYSTAL, COAL, SPONGE, ASH, SAND, SNOW,
 	PLANT, SEAWEED, FLOWER, GUNPOWDER, SPORE, WATER, OIL, LAVA, ACID,
+	IRON, COPPER, GOLD, SILVER, LEAD, TIN, MERCURY, TITANIUM,
+	MUSHROOM, MOSS, VINE, POLLEN, SLIME, BONE, SHELL, FUNGUS,
 ]
 
 var grid := PackedByteArray()
@@ -142,7 +192,7 @@ func spawn_block(block_r: int, block_c: int, element: String) -> void:
 			grid[i] = type
 			if type == FIRE:
 				life[i] = 30 + rng.randi_range(0, 24)
-			elif type == SPORE:
+			elif type == SPORE or type == POLLEN:
 				life[i] = 90 + rng.randi_range(0, 60)
 			elif type == COAL:
 				life[i] = 60 + rng.randi_range(0, 40)
@@ -210,7 +260,8 @@ func step() -> Dictionary:
 			if type == EMPTY or type == STONE or type == ICE or type == OBSIDIAN \
 					or type == PLANT or type == GLASS or type == COAL \
 					or type == SPONGE or type == SEAWEED or type == CRYSTAL \
-					or type == FLOWER:
+					or type == FLOWER or (type >= IRON and type != MERCURY \
+					and type != SLIME and type != POLLEN):
 				continue
 			match type:
 				SAND:
@@ -237,6 +288,12 @@ func step() -> Dictionary:
 				SMOKE:
 					_step_steam(x, y, i)
 				SPORE:
+					_step_spore(x, y, i)
+				MERCURY:
+					_step_liquid(x, y, i, 0.85)
+				SLIME:
+					_step_liquid(x, y, i, 0.30)
+				POLLEN:
 					_step_spore(x, y, i)
 
 	if _moved_any or not _events.is_empty():
@@ -399,6 +456,12 @@ func _react() -> void:
 				_react_flower(x, y, i)
 			elif type == CRYSTAL:
 				_react_crystal(x, y, i)
+			elif type == POLLEN:
+				_react_pollen(x, y, i)
+			elif type == SLIME:
+				_react_slime(x, y, i)
+			elif type == MUSHROOM or type == MOSS or type == VINE or type == FUNGUS:
+				_react_pack_plant(x, y, i, type)
 
 
 func _react_lava(x: int, y: int, i: int) -> void:
@@ -446,6 +509,19 @@ func _react_lava(x: int, y: int, i: int) -> void:
 			life[j] = 28 + rng.randi_range(0, 16)
 			_moved[j] = 1
 			_event("ignite", nx, ny)
+			return
+		elif other == MUSHROOM or other == MOSS or other == VINE \
+				or other == FUNGUS or other == POLLEN:
+			grid[j] = FIRE
+			life[j] = 24 + rng.randi_range(0, 16)
+			_moved[j] = 1
+			_event("ignite", nx, ny)
+			return
+		elif other == MERCURY:
+			grid[j] = STEAM
+			life[j] = 24 + rng.randi_range(0, 16)
+			_moved[j] = 1
+			_event("boil", nx, ny)
 			return
 		elif other == COAL:
 			grid[j] = FIRE
@@ -505,6 +581,12 @@ func _react_fire(x: int, y: int, i: int) -> void:
 		elif other == SEAWEED or other == FLOWER or other == SPORE:
 			grid[j] = FIRE
 			life[j] = 24 + rng.randi_range(0, 16)
+			_event("ignite", nx, ny)
+			return
+		elif other == MUSHROOM or other == MOSS or other == VINE \
+				or other == FUNGUS or other == POLLEN:
+			grid[j] = FIRE
+			life[j] = 22 + rng.randi_range(0, 14)
 			_event("ignite", nx, ny)
 			return
 		elif other == COAL:
@@ -736,7 +818,8 @@ func _explode(cx: int, cy: int, radius: int) -> void:
 				grid[j] = FIRE
 				life[j] = 18 + rng.randi_range(0, 10)
 				continue
-			if other == ASH or other == SPONGE or other == SEAWEED or other == FLOWER:
+			if other == ASH or other == SPONGE or other == SEAWEED or other == FLOWER \
+					or other >= IRON:
 				grid[j] = EMPTY
 				continue
 			if other == FIRE or other == SMOKE or other == STEAM:
@@ -769,12 +852,62 @@ func _react_acid(x: int, y: int, i: int) -> void:
 		if other == STONE or other == SAND or other == ICE or other == OBSIDIAN \
 				or other == PLANT or other == GLASS or other == SEAWEED \
 				or other == SPONGE or other == COAL or other == ASH \
-				or other == SNOW or other == CRYSTAL or other == FLOWER:
+				or other == SNOW or other == CRYSTAL or other == FLOWER \
+				or other >= IRON:
 			grid[j] = EMPTY
 			grid[i] = EMPTY
 			_moved[i] = 1
 			_moved[j] = 1
 			_event("dissolve", nx, ny)
+			return
+
+
+func _react_pollen(x: int, y: int, i: int) -> void:
+	if rng.randf() > 0.020:
+		return
+	for offset in NEIGHBORS:
+		var nx: int = x + offset.x
+		var ny: int = y + offset.y
+		if nx < 0 or nx >= w or ny < 0 or ny >= h:
+			continue
+		var j := ny * w + nx
+		if int(grid[j]) == WATER:
+			grid[j] = FUNGUS if rng.randf() < 0.3 else MUSHROOM
+			_moved[j] = 1
+			grid[i] = EMPTY
+			_moved[i] = 1
+			_event("grow", nx, ny)
+			return
+
+
+func _react_slime(x: int, y: int, i: int) -> void:
+	for offset in NEIGHBORS:
+		var nx: int = x + offset.x
+		var ny: int = y + offset.y
+		if nx < 0 or nx >= w or ny < 0 or ny >= h:
+			continue
+		var j := ny * w + nx
+		var other := int(grid[j])
+		if other == FIRE or other == LAVA:
+			grid[i] = WATER
+			_moved[i] = 1
+			_event("extinguish", x, y)
+			return
+
+
+func _react_pack_plant(x: int, y: int, i: int, type: int) -> void:
+	if rng.randf() > 0.0035 * growth_boost:
+		return
+	for offset in NEIGHBORS:
+		var nx: int = x + offset.x
+		var ny: int = y + offset.y
+		if nx < 0 or nx >= w or ny < 0 or ny >= h:
+			continue
+		var j := ny * w + nx
+		if int(grid[j]) == WATER:
+			grid[j] = type
+			_moved[j] = 1
+			_event("grow", nx, ny)
 			return
 
 
@@ -1058,7 +1191,8 @@ func quantize() -> Array:
 		var total := totals[type]
 		var minimum := 16 if type == STONE or type == ICE or type == OBSIDIAN \
 			or type == GLASS or type == PLANT or type == CRYSTAL or type == COAL \
-			or type == SPONGE or type == SEAWEED or type == FLOWER else 24
+			or type == SPONGE or type == SEAWEED or type == FLOWER \
+			or (type >= IRON and type != MERCURY and type != SLIME and type != POLLEN) else 24
 		if total < minimum:
 			continue
 		var budget := maxi(1, int(round(float(total) / 64.0)))

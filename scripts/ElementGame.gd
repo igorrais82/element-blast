@@ -138,6 +138,17 @@ static var ELEMENT_WEIGHTS := {
 	"gunpowder": 1.2,
 }
 
+static var PACK_WEIGHTS := {
+	"pack_metals": {
+		"iron": 0.55, "copper": 0.50, "gold": 0.38, "silver": 0.45,
+		"lead": 0.40, "tin": 0.45, "mercury": 0.45, "titanium": 0.35,
+	},
+	"pack_flora": {
+		"mushroom": 0.55, "moss": 0.55, "vine": 0.50, "pollen": 0.45,
+		"slime": 0.40, "bone": 0.35, "shell": 0.35, "fungus": 0.45,
+	},
+}
+
 var board: Array = []
 var rows := DEFAULT_SIZE
 var cols := DEFAULT_SIZE
@@ -154,6 +165,7 @@ var awaken_timer := 0.0
 var awaken_ticks := 0
 var surge_index := 0
 var surge_plan: Array = []
+var surge_ticks: Array = []
 var surge_scale := 1.0
 var temperature_degrees := TEMP_START_DEG
 var temperature := 0  # band: -2..2
@@ -202,6 +214,7 @@ func reset() -> void:
 	awaken_ticks = 0
 	surge_index = 0
 	surge_plan = []
+	surge_ticks = []
 	current_event = {}
 	event_active = false
 	event_moves_left = 0
@@ -387,9 +400,14 @@ func _pick_shape() -> Dictionary:
 
 
 func _active_weights() -> Dictionary:
+	var weights: Dictionary = ELEMENT_WEIGHTS.duplicate()
 	if event_active and current_event.has("weights"):
-		return current_event["weights"]
-	return ELEMENT_WEIGHTS
+		weights = current_event["weights"].duplicate()
+	for pack_id in Profile.owned_packs:
+		var pack_weights: Dictionary = PACK_WEIGHTS.get(pack_id, {})
+		for element in pack_weights:
+			weights[element] = float(weights.get(element, 0.0)) + float(pack_weights[element])
+	return weights
 
 
 func _pick_element() -> String:
@@ -572,6 +590,10 @@ func begin_awakening() -> void:
 	awaken_timer = 0.0
 	awaken_ticks = 0
 	surge_index = 0
+	surge_ticks = []
+	for tick_at in SURGE_TICKS:
+		surge_ticks.append(maxi(1, int(round(
+			float(tick_at) * float(sand.max_ticks) / float(SandSim.MAX_TICKS)))))
 	surge_scale = float(current_event.get("surge_multiplier", 1.0)) if event_active else 1.0
 	if event_active and current_event.has("surge_element"):
 		var entry := {
@@ -612,10 +634,11 @@ func update(delta: float) -> void:
 			var points := _apply_sand_events(events)
 			game_event.emit("sand_reactions", {"events": events, "points": points})
 
-		while surge_index < SURGE_TICKS.size() and awaken_ticks >= int(SURGE_TICKS[surge_index]):
+		while surge_index < surge_ticks.size() \
+				and awaken_ticks >= int(surge_ticks[surge_index]):
 			_trigger_surge()
 
-	if surge_index >= SURGE_TICKS.size() and sand.is_finished(awaken_ticks):
+	if surge_index >= surge_ticks.size() and sand.is_finished(awaken_ticks):
 		finish_awakening()
 
 

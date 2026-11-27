@@ -7,6 +7,8 @@ var valid_types := [
 	"stone", "sand", "water", "lava", "acid", "ice", "obsidian", "steam",
 	"fire", "oil", "plant", "gunpowder", "smoke", "glass",
 	"seaweed", "sponge", "coal", "ash", "snow", "crystal", "spore", "flower",
+	"iron", "copper", "gold", "silver", "lead", "tin", "mercury", "titanium",
+	"mushroom", "moss", "vine", "pollen", "slime", "bone", "shell", "fungus",
 ]
 
 
@@ -26,6 +28,7 @@ func _ready() -> void:
 	test_temperature_shift()
 	test_events()
 	test_event_elements()
+	test_packs()
 	test_board_sizes()
 	test_quantize()
 	test_new_quantize()
@@ -354,6 +357,16 @@ func test_events() -> void:
 			all_water = false
 	_check(all_water, "flood should drop only water")
 	_check(awakening.surge_scale > 1.0, "flood surges should be doubled")
+
+	var old_max := QualitySettings.sand_max_ticks
+	QualitySettings.sand_max_ticks = 150
+	var low := ElementGame.new()
+	low.start()
+	low.begin_awakening()
+	_check(int(low.surge_ticks[low.surge_ticks.size() - 1]) < low.sand.max_ticks,
+		"low quality surges should fit into the shorter phase")
+	_finish_awakening(low)
+	QualitySettings.sand_max_ticks = old_max
 	print("  events: ok")
 
 
@@ -455,6 +468,29 @@ func test_new_quantize() -> void:
 	_check(counts["gunpowder"] == 1, "gunpowder block should quantize to one cell")
 	_check(counts["glass"] == 1, "glass block should quantize to one cell")
 	print("  new quantize: ok")
+
+
+func test_packs() -> void:
+	_check(ElementGame.PACK_WEIGHTS.has("pack_metals"), "metals pack exists")
+	_check(ElementGame.PACK_WEIGHTS.has("pack_flora"), "flora pack exists")
+	_check(ElementGame.PACK_WEIGHTS["pack_metals"].size() >= 8,
+		"metals pack should have 8 elements")
+	_check(ElementGame.PACK_WEIGHTS["pack_flora"].size() >= 8,
+		"flora pack should have 8 elements")
+	var sim := SandSim.new()
+	var names := [
+		"iron", "copper", "gold", "silver", "lead", "tin", "mercury", "titanium",
+		"mushroom", "moss", "vine", "pollen", "slime", "bone", "shell", "fungus",
+	]
+	for i in names.size():
+		sim.spawn_block(i / 8, i % 8, str(names[i]))
+	var cells := sim.quantize()
+	var found := {}
+	for cell in cells:
+		found[str(cell)] = true
+	for name in names:
+		_check(found.has(name), "quantization should keep %s" % name)
+	print("  packs: ok")
 
 
 func test_board_sizes() -> void:
